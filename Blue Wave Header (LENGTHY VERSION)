@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Wave HEADER (LENGTHY VERSION) — Museu do Mar</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0; left: 0;
+  }
+</style>
+</head>
+<body>
+<canvas id="wave"></canvas>
+<script>
+(function () {
+  const canvas = document.getElementById('wave');
+  const ctx    = canvas.getContext('2d', { alpha: true });
+  let W, H, dpr;
+
+  /* ── Resize ── */
+  function resize() {
+    dpr    = window.devicePixelRatio || 1;
+    W      = window.innerWidth;
+    H      = window.innerHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+  }
+  window.addEventListener('resize', () => { ctx.setTransform(1,0,0,1,0,0); resize(); });
+  resize();
+
+  const LAYERS = [
+    /* back / darkest — shape layer 3 */
+    { yBase:0.55, amp:0.038, freq:0.80, speed:0.22, phase:0.0,          color:'#1e2c6a', alpha:0.52 },
+    /* mid-back — shape layer 2 */
+    { yBase:0.50, amp:0.042, freq:0.65, speed:0.18, phase:Math.PI*0.5,  color:'#273d89', alpha:0.52 },
+    /* mid — shape layer 9 */
+    { yBase:0.44, amp:0.048, freq:0.55, speed:0.14, phase:Math.PI*1.0,  color:'#2f4595', alpha:0.60 },
+    /* mid-front — shape layer 8 variation */
+    { yBase:0.38, amp:0.044, freq:0.70, speed:0.20, phase:Math.PI*1.5,  color:'#384da0', alpha:0.52 },
+    /* front — lightest / fastest */
+    { yBase:0.33, amp:0.036, freq:0.90, speed:0.28, phase:Math.PI*0.3,  color:'#414b98', alpha:0.70 },
+  ];
+
+  function drawWave(layer, t) {
+    const amp   = layer.amp * H;
+    const yBase = layer.yBase * H;
+    const freq  = layer.freq;
+    const speed = layer.speed;
+    const phase = layer.phase;
+
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+
+
+    const step = 4;
+    for (let x = 0; x <= W; x += step) {
+      const nx  = x / W;                              /* 0 → 1 */
+      const y   = yBase
+                + Math.sin(nx * Math.PI * 2 * freq        + t * speed + phase) * amp
+                + Math.sin(nx * Math.PI * 2 * freq * 1.73 + t * speed * 0.61 + phase * 1.4) * amp * 0.45
+                + Math.sin(nx * Math.PI * 2 * freq * 0.47 + t * speed * 1.18 + phase * 0.7) * amp * 0.25;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.globalAlpha = layer.alpha;
+    ctx.fillStyle   = layer.color;
+    ctx.fill();
+  }
+
+  /* ── LOOP PRINCIPAL ── */
+  let t = 0;
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W, H);
+    ctx.rotate(Math.PI);
+
+
+    LAYERS.forEach(layer => drawWave(layer, t));
+
+    ctx.restore();
+
+    ctx.globalAlpha = 1;
+    t += 0.016;
+    requestAnimationFrame(render);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
